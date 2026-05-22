@@ -1,0 +1,62 @@
+:root {
+  /* Dynamic Harmonious HSL Color Palette (Dark Theme Default) */
+  --bg-primary: hsl(222, 47%, 4%);
+  --bg-secondary: hsl(222, 47%, 7%);
+  --bg-card: hsla(222, 47%, 10%, 0.6);
+  --bg-card-hover: hsla(222, 47%, 15%, 0.8);
+  
+  --border-color: hsla(222, 47%, 20%, 0.4);
+  --border-glow: hsla(222, 47%, 30%, 0.2);
+
+  --text-primary: hsl(210, 40%, 98%);
+  --text-secondary: hsl(215, 20%, 65%);
+  --text-muted: hsl(215, 15%, 45%);
+
+  /* Neon accents */
+  --color-primary: hsl(250, 89%, 65%); /* Electric Indigo */
+  --color-primary-glow: hsla(250, 89%, 65%, 0.35);
+  --color-secondary: hsl(174, 86%, 45%); /* Emerald Green */
+  --color-secondary-glow: hsla(174, 86%, 45%, 0.35);
+  --color-accent: hsl(322, 85%, 58%); /* Vibrant Orchid Pink */
+  --color-accent-glow: hsla(322, 85%, 58%, 0.35);
+
+  --color-danger: hsl(354, 70%, 54%);
+  --color-danger-glow: hsla(354, 70%, 54%, 0.3);
+  --color-warning: hsl(45, 93%, 47%);
+  
+  /* Glassmorphism settings */
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  
+  /* Radii and sizing */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  --font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  --font-size-base: 16px;
+  --line-height-base: 1.6;
+}
+
+/* Light Theme override (if user prefers light mode) */
+[data-theme="light"] {
+  --bg-primary: hsl(210, 40%, 96%);
+  --bg-secondary: hsl(210, 40%, 98%);
+  --bg-card: hsla(210, 40%, 100%, 0.7);
+  --bg-card-hover: hsla(210, 40%, 95%, 0.9);
+  
+  --border-color: hsla(210, 40%, 80%, 0.4);
+  --border-glow: hsla(250, 89%, 65%, 0.05);
+
+  --text-primary: hsl(222, 47%, 12%);
+  --text-secondary: hsl(215, 25%, 35%);
+  --text-muted: hsl(215, 20%, 55%);
+
+  --color-primary: hsl(250, 89%, 60%);
+  --color-primary-glow: hsla(250, 89%, 60%, 0.15);
+  --color-secondary: hsl(174, 86%, 38%);
+  --color-secondary-glow: hsla(174, 86%, 38%, 0.15);
+
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+}

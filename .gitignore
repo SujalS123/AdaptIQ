@@ -1,0 +1,68 @@
+# Dependency Directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Build and Output Directories
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+packages/frontend/dist/
+packages/backend/dist/
+
+# Python Virtual Environments & Packages
+.venv/
+venv/
+ENV/
+env/
+packages/ai-engine/.venv/
+packages/ai-engine/venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env.*.local
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS and System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs and Runtime Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*

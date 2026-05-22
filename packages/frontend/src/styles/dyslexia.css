@@ -1,0 +1,29 @@
+/* OpenDyslexic / Dyslexia-friendly styling overrides */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
+.dyslexia-mode {
+  --font-family: 'Lexend', -apple-system, sans-serif !important;
+  --line-height-base: 2.0 !important;
+}
+
+.dyslexia-mode body,
+.dyslexia-mode p,
+.dyslexia-mode span,
+.dyslexia-mode div,
+.dyslexia-mode h1,
+.dyslexia-mode h2,
+.dyslexia-mode h3,
+.dyslexia-mode button,
+.dyslexia-mode input,
+.dyslexia-mode textarea {
+  font-family: var(--font-family) !important;
+  letter-spacing: 0.15em !important;
+  word-spacing: 0.25em !important;
+  line-height: var(--line-height-base) !important;
+}
+
+.dyslexia-mode .card,
+.dyslexia-mode .chat-bubble {
+  border-width: 2px !important;
+  border-color: var(--text-muted) !important;
+}

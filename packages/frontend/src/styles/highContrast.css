@@ -1,0 +1,30 @@
+/* High Contrast theme parameters */
+.high-contrast-mode {
+  --bg-primary: #000000 !important;
+  --bg-secondary: #000000 !important;
+  --bg-card: #000000 !important;
+  
+  --border-color: #ffffff !important;
+  --border-glow: #ffffff !important;
+  
+  --text-primary: #ffff00 !important; /* Pure high contrast yellow */
+  --text-secondary: #ffffff !important; /* Pure white */
+  --text-muted: #ffffff !important;
+  
+  --color-primary: #00ffff !important; /* Cyan */
+  --color-secondary: #00ff00 !important; /* Green */
+  --color-accent: #ff00ff !important; /* Magenta */
+  
+  --glass-blur: 0px !important;
+}
+
+.high-contrast-mode button {
+  border: 2px solid #ffffff !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast-mode button:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+}

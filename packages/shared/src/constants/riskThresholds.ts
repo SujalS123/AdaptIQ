@@ -1,0 +1,4 @@
+export const RISK_LOW_THRESHOLD = 0.4;
+export const RISK_MEDIUM_THRESHOLD = 0.7;
+export const RISK_HIGH_THRESHOLD = 0.9;
+export const SHAP_CRITICAL_CONTRIBUTION = 0.25;
