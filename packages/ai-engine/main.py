@@ -11,6 +11,7 @@ from irt.question_bank import MOCK_QUESTIONS
 from risk.risk_service import RiskService
 from planner.planner_service import PlannerService
 from nova.agent_orchestrator import NovaAgentOrchestrator
+from dna.learning_style_detector import VARKDetector
 
 app = FastAPI(
     title="AdaptIQ AI-Engine",
@@ -31,8 +32,13 @@ app.add_middleware(
 risk_service = RiskService()
 planner_service = PlannerService()
 nova_orchestrator = NovaAgentOrchestrator()
+vark_detector = VARKDetector()
 
 # --- Pydantic Schemas ---
+
+class VARKRequest(BaseModel):
+    quiz_responses: List[Dict[str, Any]]
+    interaction_signals: Dict[str, float]
 
 class IRTResponseItem(BaseModel):
     question_id: str
@@ -76,6 +82,7 @@ class NovaChatRequest(BaseModel):
     text: str
     current_theta: float
     recent_errors: Optional[List[str]] = None
+    selected_language: Optional[str] = None
 
 
 # --- Endpoints ---
@@ -183,9 +190,24 @@ def get_nova_socratic_chat(payload: NovaChatRequest):
             student_id=payload.student_id,
             text=payload.text,
             current_theta=payload.current_theta,
-            recent_errors=payload.recent_errors
+            recent_errors=payload.recent_errors,
+            selected_language=payload.selected_language
         )
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/dna/vark")
+def detect_vark_style(payload: VARKRequest):
+    """
+    Classifies student learning modality (VARK style) based on quiz answers and implicit metrics.
+    """
+    try:
+        profile = vark_detector.get_combined_profile(
+            quiz_responses=payload.quiz_responses,
+            interaction_signals=payload.interaction_signals
+        )
+        return profile
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

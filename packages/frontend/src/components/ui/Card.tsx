@@ -21,3 +21,6 @@ export const Card: React.FC<CardProps> = ({ children, className = '', onClick, s
     </div>
   );
 };
+
+export default Card;
+

@@ -6,6 +6,8 @@ import quizRoutes from './routes/quiz';
 import planRoutes from './routes/plan';
 import novaRoutes from './routes/nova';
 import uploadRoutes from './routes/upload';
+import teacherRoutes from './routes/teacher';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/plan', planRoutes);
 app.use('/api/nova', novaRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

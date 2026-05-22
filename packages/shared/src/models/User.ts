@@ -13,6 +13,18 @@ const UserSchema: Schema = new Schema(
     institutionId: { type: Schema.Types.ObjectId, ref: 'Institution' },
     languagePreference: { type: String, default: 'en' },
     avatarUrl: { type: String },
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date, default: null },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String },
+    lastLoginAt: { type: Date },
+    lastLoginIP: { type: String },
+    accessibilitySettings: {
+      dyslexiaMode: { type: Boolean, default: false },
+      highContrast: { type: Boolean, default: false },
+      fontSize: { type: String, enum: ['normal', 'large', 'xlarge'], default: 'normal' },
+      reduceMotion: { type: Boolean, default: false },
+    },
   },
   { timestamps: true }
 );

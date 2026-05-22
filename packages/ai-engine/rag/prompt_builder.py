@@ -5,11 +5,12 @@ def build_socratic_prompt(
     retrieved_documents: List[Dict[str, Any]],
     student_memory: List[Dict[str, Any]],
     current_theta: float,
-    recent_errors: List[str] = None
+    recent_errors: List[str] = None,
+    language: str = "en"
 ) -> str:
     """
     Constructs a highly detailed, Socratic prompt combining the user query,
-    RAG content, memory profile facts, and student psychometrics.
+    RAG content, memory profile facts, student psychometrics, and language settings.
     """
     # 1. Compile RAG context
     rag_context = ""
@@ -40,11 +41,25 @@ def build_socratic_prompt(
     else:
         ability_description = "Intermediate. Offer progressive hints."
 
+    # 4. Language specifications
+    lang_names = {
+        "en": "English",
+        "hi": "Hindi (हिंदी)",
+        "mr": "Marathi (मराठी)",
+        "bn": "Bengali (বাংলা)",
+        "ta": "Tamil (தமிழ்)",
+        "te": "Telugu (తెలుగు)"
+    }
+    lang_name = lang_names.get(language, "English")
+    lang_constraint = f"IMPORTANT: The student has selected or is querying in {lang_name}. You MUST respond entirely in {lang_name} using its proper native script (e.g. Devnagari script for Hindi/Marathi, Tamil script for Tamil, etc.). Do NOT output English characters or words if the selected language is Hindi, Marathi, Bengali, Tamil, or Telugu, unless referring to standard database keywords like SQL, BCNF, etc."
+
     prompt = f"""
 SYSTEM INSTRUCTIONS:
 You are Nova, the premium, lifelong Socratic AI Mentor for AdaptIQ.
 Your goal is to guide students to answers, NOT to give them direct formulas or definitions.
 Use the Socratic method: ask guiding, thought-provoking questions that help them discover the answer themselves.
+
+{lang_constraint}
 
 STUDENT INFO:
 - Current Cognitive Ability Level (IRT Theta): {current_theta:.2f} ({ability_description})
@@ -61,6 +76,6 @@ USER QUERY:
 "{student_query}"
 
 Response format:
-Respond in a friendly, engaging, conversational Socratic style. Make subtle callbacks to things Nova remembers about them (e.g., if they like cricket examples, explain databases via cricket!). Keep it premium, responsive, and alive.
+Respond in a friendly, engaging, conversational Socratic style in the specified language ({lang_name}). Make subtle callbacks to things Nova remembers about them. Keep it premium, responsive, and alive.
 """
     return prompt.strip()

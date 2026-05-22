@@ -12,4 +12,16 @@ export interface IUser {
   avatarUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  failedLoginAttempts?: number;
+  lockUntil?: Date;
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
+  lastLoginAt?: Date;
+  lastLoginIP?: string;
+  accessibilitySettings?: {
+    dyslexiaMode?: boolean;
+    highContrast?: boolean;
+    fontSize?: 'normal' | 'large' | 'xlarge';
+    reduceMotion?: boolean;
+  };
 }

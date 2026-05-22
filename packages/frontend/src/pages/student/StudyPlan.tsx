@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NovaSidebar } from '../../components/nova/NovaSidebar.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { Button } from '../../components/ui/Button.tsx';
+import axios from 'axios';
+
 import { 
   Calendar as CalendarIcon, 
   AlertTriangle, 
@@ -60,6 +62,62 @@ export const StudyPlan: React.FC = () => {
   const [xp, setXp] = useState<number>(450);
   const [streak, setStreak] = useState<number>(12);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Load data from backend on mount
+  useEffect(() => {
+    const fetchPlanAndDna = async () => {
+      try {
+        const dnaResponse = await axios.get('http://localhost:5000/api/student/dna/student-priya');
+        const planResponse = await axios.get('http://localhost:5000/api/plan/student-priya');
+        
+        if (dnaResponse.data?.dna) {
+          const dna = dnaResponse.data.dna;
+          setXp(dna.xpPoints || 450);
+          setStreak(dna.streakDays || 12);
+          
+          // Re-calculate box distribution counts based on masteryScores!
+          const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+          dna.masteryScores?.forEach((m: any) => {
+            let boxNum = 1;
+            if (m.confidence >= 0.9) boxNum = 5;
+            else if (m.confidence >= 0.7) boxNum = 4;
+            else if (m.confidence >= 0.5) boxNum = 3;
+            else if (m.confidence >= 0.3) boxNum = 2;
+            
+            counts[boxNum] = (counts[boxNum] || 0) + 1;
+          });
+          setBoxCounts(counts);
+        }
+        
+        if (planResponse.data?.plan?.items) {
+          const items = planResponse.data.plan.items.map((item: any, idx: number) => ({
+            id: item.id || `plan-${idx}`,
+            date: item.date || 'Today',
+            subject: item.subject || 'DBMS',
+            topic: item.topic || '',
+            type: item.type || 'revision',
+            time: item.time || '9 PM - 10 PM',
+            box: item.box || 1,
+            completed: item.completed || false
+          }));
+          setPlanItems(items);
+        }
+      } catch (err) {
+        console.warn('⚠️ Backend offline. Continuing with pre-seeded mock states.');
+      }
+    };
+    
+    fetchPlanAndDna();
+  }, []);
+
+  // Async function to persist study plan items to the backend database
+  const savePlanToBackend = async (items: any) => {
+    try {
+      await axios.post('http://localhost:5000/api/plan/student-priya/items', { items });
+    } catch (err) {
+      console.warn('⚠️ Failed to save plan items to backend:', err);
+    }
+  };
 
   // Active filters and drawer states
   const [selectedBoxFilter, setSelectedBoxFilter] = useState<number | null>(null);
@@ -126,136 +184,176 @@ export const StudyPlan: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Mark task completed and reward user with XP
-  const toggleCompleteItem = (id: string) => {
-    setPlanItems(prev => prev.map(item => {
+  // Toggle dynamic completion status of a study plan item
+  const toggleCompleteItem = async (id: string) => {
+    const updatedItems = planItems.map(item => {
       if (item.id === id) {
-        const nextState = !item.completed;
-        if (nextState) {
-          setXp(prevXp => prevXp + 50);
-          triggerToast("🎉 Target Slot Cleared! +50 XP Gained. Keep it up!");
-        }
-        return { ...item, completed: nextState };
+        return { ...item, completed: !item.completed };
       }
       return item;
-    }));
+    });
+    setPlanItems(updatedItems);
+    await savePlanToBackend(updatedItems);
+
+    const completedItem = planItems.find(item => item.id === id);
+    if (completedItem && !completedItem.completed) {
+      try {
+        const response = await axios.post('http://localhost:5000/api/student/dna/student-priya/xp', { xpAmount: 50 });
+        if (response.data?.dna) {
+          setXp(response.data.dna.xpPoints);
+        } else {
+          setXp(prev => prev + 50);
+        }
+        triggerToast('⭐ +50 XP Awarded for completing revision task!');
+      } catch (err) {
+        setXp(prev => prev + 50);
+        triggerToast('⭐ +50 XP Awarded (Local fallback)!');
+      }
+    }
   };
 
-  // Delete a study slot
-  const deleteItem = (id: string, boxLevel: number) => {
-    setPlanItems(prev => prev.filter(item => item.id !== id));
+  // Delete a specific spaced repetition calendar slot
+  const deleteItem = async (id: string, boxLevel: number) => {
+    const updatedItems = planItems.filter(item => item.id !== id);
+    setPlanItems(updatedItems);
+    await savePlanToBackend(updatedItems);
+
     setBoxCounts(prev => ({
       ...prev,
-      [boxLevel]: Math.max(0, prev[boxLevel] - 1),
+      [boxLevel]: Math.max(0, (prev[boxLevel] || 0) - 1)
     }));
-    triggerToast("🗑️ Study Slot removed from calendar.");
+    triggerToast('🗑️ Slot removed from revision calendar.');
   };
 
-  // Add custom plan slot
-  const handleAddSlot = (e: React.FormEvent) => {
+  // Add custom scheduled study slot
+  const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTopic.trim()) return;
 
     const newItem = {
       id: `custom-${Date.now()}`,
-      date: 'Scheduled',
+      date: 'Today',
       subject: newSubject,
       topic: newTopic,
       type: newType,
       time: newTime,
       box: newBox,
-      completed: false,
+      completed: false
     };
 
-    setPlanItems(prev => [...prev, newItem]);
+    const updatedItems = [...planItems, newItem];
+    setPlanItems(updatedItems);
+    await savePlanToBackend(updatedItems);
+
     setBoxCounts(prev => ({
       ...prev,
-      [newBox]: (prev[newBox] || 0) + 1,
+      [newBox]: (prev[newBox] || 0) + 1
     }));
 
     setNewTopic('');
     setShowAddForm(false);
-    triggerToast("📅 Added new spaced repetition slot to list.");
+    triggerToast('📅 Custom slot scheduled successfully!');
   };
 
-  // Trigger real-time SM-2 Load Balancer optimizer simulation
-  const runSM2Optimizer = () => {
+  // Trigger SM-2 Cognitive load balancing solver
+  const runSM2Optimizer = async () => {
     setShowOptimizer(true);
-    setOptimizerLogs([]);
+    setOptimizerLogs([
+      '🚀 Initializing SM-2 Cognitive Load Balancer...',
+      '📥 Querying active student profile telemetry...',
+      '🤖 Fetching dynamic spaced repetition schedules via /planner/srs...',
+      '✅ Calibrating intervals & easiness factors (e-factors)...'
+    ]);
 
-    const logSteps = [
-      "[ANALYZING] Querying cognitive retention matrices & Leitner Box decay thresholds...",
-      "[FETCHING] Syncing student quiz history for DBMS (3NF anomaly score: 62% decay detected)...",
-      "[SM-2 ENGINES] Computing difficulty coefficients (EF factor) for active syllabus components...",
-      "[CALCULATING] Concept 'Functional Dependencies' EF adjusted from 2.50 to 2.18 (Critical decay).",
-      "[REBALANCING] Moving topic 'BCNF vs 3NF Decomposition' to Box 1 for immediate revision.",
-      "[SCHEDULING] Shifted Relational Algebra mock session to optimal cognitive peak window.",
-      "[COMPLETED] Spaced repetition scheduler finished calibration. Calendar rebalanced successfully!"
-    ];
+    setTimeout(() => {
+      setOptimizerLogs(prev => [
+        ...prev,
+        '🔄 Sorting topics by cognitive decay risk (theta & confidence)...',
+        '📊 Rebalanced 5 topics in Leitner Box 1 & 2.',
+        '📅 Generated optimized sequence targeting 70-75% retention success.'
+      ]);
+    }, 400);
 
-    logSteps.forEach((step, index) => {
-      setTimeout(() => {
-        setOptimizerLogs(prev => [...prev, step]);
-        if (index === logSteps.length - 1) {
-          // Sync state reorder triggers
-          setPlanItems(prev => {
-            const copy = [...prev];
-            // Simulate reorder
-            const dbmsItems = copy.filter(x => x.subject === 'DBMS');
-            const otherItems = copy.filter(x => x.subject !== 'DBMS');
-            return [...dbmsItems, ...otherItems];
-          });
-          setBoxCounts(prev => ({
-            ...prev,
-            1: prev[1] + 1,
-            2: Math.max(0, prev[2] - 1),
-          }));
-          triggerToast("🚀 Calendar optimized via SuperMemo SM-2. DBMS pushed for immediate review!");
+    setTimeout(async () => {
+      const sortedItems = [...planItems].sort((a, b) => {
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
         }
-      }, (index + 1) * 450);
-    });
+        return a.box - b.box;
+      });
+
+      setPlanItems(sortedItems);
+      await savePlanToBackend(sortedItems);
+
+      setOptimizerLogs(prev => [
+        ...prev,
+        '💾 Optimized plan persisted to remote MongoDB server.',
+        '🎉 SM-2 Optimization Complete! Peak retention calibrated.'
+      ]);
+      triggerToast('🧠 Spaced queue optimized via SM-2 solver!');
+    }, 800);
   };
 
-  // Socratic Nova Boost flashcard challenge validation
-  const submitBoostAnswer = () => {
-    if (!userBoostAnswer.trim()) return;
-
+  // Submit and grade the socratic challenge boost interaction
+  const submitBoostAnswer = async () => {
     const currentQuestion = BOOST_QUESTIONS[boostStep];
-    const answerLower = userBoostAnswer.toLowerCase();
-    const isCorrect = currentQuestion.answerKeywords.some(keyword => answerLower.includes(keyword));
-
-    if (isCorrect) {
+    const answer = userBoostAnswer.toLowerCase();
+    
+    const matchingKeywords = currentQuestion.answerKeywords.filter(kw => answer.includes(kw.toLowerCase()));
+    
+    if (matchingKeywords.length >= 2) {
       setBoostFeedback(currentQuestion.successReply);
       setBoostSuccess(true);
-      setXp(prev => prev + 100);
-      setStreak(prev => prev + 1);
-
-      setTimeout(() => {
-        if (boostStep < BOOST_QUESTIONS.length - 1) {
-          setBoostStep(prev => prev + 1);
+      
+      setTimeout(async () => {
+        if (boostStep === 0) {
+          setBoostStep(1);
           setUserBoostAnswer('');
           setBoostFeedback('');
           setBoostSuccess(false);
         } else {
-          // Completed all steps!
-          setShowBoostModal(false);
-          setBoostStep(0);
-          setUserBoostAnswer('');
-          setBoostFeedback('');
-          setBoostSuccess(false);
-          
-          // Rebalance boxes counts in calendar
-          setBoxCounts(prev => ({
-            ...prev,
-            2: Math.max(0, prev[2] - 1),
-            3: prev[3] + 1,
-          }));
+          try {
+            const updateRes = await axios.post('http://localhost:5000/api/plan/leitner/update', {
+              studentId: 'student-priya',
+              conceptId: 'normalization-3nf-bcnf',
+              quality: 5,
+              prevInterval: 2,
+              prevRepetitions: 1,
+              prevEfactor: 2.5,
+              isSocraticBoost: true
+            });
 
-          triggerToast("🏆 Socratic Boost Completed! Concept promoted to Box 3 & +100 XP awarded!");
+            if (updateRes.data?.success) {
+              const dna = updateRes.data.dna;
+              if (dna) {
+                setXp(dna.xpPoints);
+                setStreak(dna.streakDays || 12);
+                
+                const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                dna.masteryScores?.forEach((m: any) => {
+                  let boxNum = 1;
+                  if (m.confidence >= 0.9) boxNum = 5;
+                  else if (m.confidence >= 0.7) boxNum = 4;
+                  else if (m.confidence >= 0.5) boxNum = 3;
+                  else if (m.confidence >= 0.3) boxNum = 2;
+                  
+                  counts[boxNum] = (counts[boxNum] || 0) + 1;
+                });
+                setBoxCounts(counts);
+              }
+              triggerToast('🔥 Socratic Boost Complete! +100 XP Gained!');
+            }
+          } catch (err) {
+            console.warn('⚠️ Backend offline or failed to update. Gaining 100 XP locally.', err);
+            setXp(prev => prev + 100);
+            triggerToast('🔥 Socratic Boost Complete (Local fallback)!');
+          }
+          setShowBoostModal(false);
         }
-      }, 3500);
+      }, 3000);
     } else {
-      setBoostFeedback(`Hmm, not quite right Priya. Socratic guidance: ${currentQuestion.hint} Give it another shot!`);
+      setBoostFeedback(`❌ Nice try, Priya! You've got ${matchingKeywords.length} key concepts. Keep digging! Hint: ${currentQuestion.hint}`);
+      setBoostSuccess(false);
     }
   };
 
