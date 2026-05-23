@@ -5,12 +5,18 @@ import { connectMongoDB } from './config/mongodb';
 import { connectRedis } from './config/redis';
 import { connectKafka } from './config/kafka';
 import { initWebSocketServer } from './websocket/index';
+import { UserRepo } from './repositories/UserRepo';
 
 const bootstrap = async () => {
   console.log('🚀 Bootstrapping AdaptIQ Express Backend Server...');
 
   // Initialize DB & Message Broker connections
   await connectMongoDB();
+  
+  // Seed the live database with demo accounts
+  const userRepo = new UserRepo();
+  await userRepo.seedMockUsers();
+
   await connectRedis();
   await connectKafka();
 

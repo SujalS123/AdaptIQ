@@ -46,6 +46,18 @@ export class UserRepo {
     return mongoose.connection.readyState === 1;
   }
 
+  async seedMockUsers(): Promise<void> {
+    if (!this.isOnline()) return;
+
+    for (const mockUser of mockUsers.values()) {
+      const existing = await UserModel.findOne({ email: mockUser.email.toLowerCase() }).lean();
+      if (!existing) {
+        console.log(`🌱 Seeding demo account into live MongoDB: ${mockUser.email}`);
+        await UserModel.create(mockUser);
+      }
+    }
+  }
+
   async findByEmail(email: string): Promise<IUser | null> {
     if (this.isOnline()) {
       const user = await UserModel.findOne({ email: email.toLowerCase() }).lean();
