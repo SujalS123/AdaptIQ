@@ -1,0 +1,17 @@
+export const SUPPORTED_LANGUAGES = {
+  en: 'English',
+  hi: 'हिन्दी (Hindi)',
+  bn: 'বাংলা (Bengali)',
+  te: 'తెలుగు (Telugu)',
+  mr: 'मराठी (Marathi)',
+  ta: 'தமிழ் (Tamil)',
+  gu: 'ગુજરાતી (Gujarati)',
+  kn: 'ಕನ್ನಡ (Kannada)',
+  ml: 'മലയാളം (Malayalam)',
+  pa: 'ਪੰਜਾਬੀ (Punjabi)',
+  or: 'ଓଡ଼ିଆ (Odia)',
+  as: 'অসমীয়া (Assamese)',
+  ur: 'اردو (Urdu)',
+  ne: 'नेपाली (Nepali)',
+  sd: 'سنڌي (Sindhi)',
+} as const;

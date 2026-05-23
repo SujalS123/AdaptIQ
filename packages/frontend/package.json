@@ -1,28 +1,30 @@
 {
-  "name": "@adaptiq/frontend",
+  "name": "adaptiq-monorepo",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "description": "AdaptIQ — Universal AI Learning Ecosystem Monorepo",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "bootstrap": "npm install",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:backend": "npm run build --workspace=packages/backend",
+    "build:frontend": "npm run build --workspace=packages/frontend",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    "dev:backend": "npm run dev --workspace=packages/backend",
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "dev:ai": "cd packages/ai-engine && uvicorn main:app --reload --port 8000",
+    "start:backend": "npm run start --workspace=packages/backend",
+    "start:frontend": "npm run start --workspace=packages/frontend"
   },
-  "dependencies": {
-    "@adaptiq/shared": "*",
-    "@reduxjs/toolkit": "^2.0.0",
-    "axios": "^1.6.2",
-    "lucide-react": "^0.294.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-redux": "^9.0.0",
-    "react-router-dom": "^6.20.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.37",
-    "@types/react-dom": "^18.2.15",
-    "@vitejs/plugin-react": "^4.2.0",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.0"
-  }
+  "keywords": [
+    "education",
+    "ai",
+    "irt",
+    "rag",
+    "monorepo"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
 }
