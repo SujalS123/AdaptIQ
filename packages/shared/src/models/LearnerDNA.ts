@@ -16,6 +16,15 @@ const EnrolledCourseSchema = new Schema({
   subject: { type: String, required: true },
   gradeLevel: { type: String },
   pineconeNamespace: { type: String, required: true },
+  unlockedModules: [{ type: String }],
+});
+
+const DiagnosticLogSchema = new Schema({
+  moduleId: { type: String, required: true },
+  score: { type: Number, required: true },
+  strongPoints: [{ type: String }],
+  weakPoints: [{ type: String }],
+  timestamp: { type: Date, default: Date.now },
 });
 
 const ConceptMasterySchema = new Schema({
@@ -39,6 +48,7 @@ const LearnerDNASchema: Schema = new Schema(
     enrolledCourses: [EnrolledCourseSchema],
     masteryScores: [ConceptMasterySchema],
     weakConcepts: [{ type: String }],
+    diagnosticHistory: [DiagnosticLogSchema],
     xpPoints: { type: Number, default: 0 },
     level: { type: Number, default: 1 },
     streakDays: { type: Number, default: 0 },

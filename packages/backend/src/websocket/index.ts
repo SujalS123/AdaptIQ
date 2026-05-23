@@ -41,7 +41,7 @@ const handleNovaSocket = (ws: WebSocket) => {
   ws.on('message', async (message: string) => {
     try {
       const data = JSON.parse(message.toString());
-      const { text, studentId, selectedLanguage } = data;
+      const { text, studentId, selectedLanguage, courseId } = data;
 
       if (!text) {
         ws.send(JSON.stringify({ error: 'Text prompt is required' }));
@@ -68,7 +68,8 @@ const handleNovaSocket = (ws: WebSocket) => {
           text: text,
           current_theta: 0.0,
           recent_errors: [],
-          selected_language: selectedLanguage || 'en'
+          selected_language: selectedLanguage || 'en',
+          course_id: courseId || null
         }, { timeout: 15000 });
         
         reply = response.data.response;

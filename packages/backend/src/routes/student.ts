@@ -2,9 +2,15 @@ import { Router, Request, Response } from 'express';
 import { LearnerDNARepo } from '../repositories/LearnerDNARepo';
 import axios from 'axios';
 import { env } from '../config/env';
+import { CourseRepo } from '../repositories/CourseRepo';
+import { UserRepo } from '../repositories/UserRepo';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 const dnaRepo = new LearnerDNARepo();
+const courseRepo = new CourseRepo();
+const userRepo = new UserRepo();
+
 
 router.get('/dna/:studentId', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -104,6 +110,82 @@ router.post('/dna/:studentId/vark', async (req: Request, res: Response): Promise
     });
 
     res.json({ success: true, learningModality: styleKey, recommendations, dna: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/student/courses/all — Fetch all active courses
+router.get('/courses/all', async (req: Request, res: Response) => {
+  try {
+    const courses = await courseRepo.findAll();
+    res.json({ courses });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/student/courses/:courseId/join — Join a course
+router.post('/courses/:courseId/join', async (req: Request, res: Response) => {
+  try {
+    const studentId = req.user?.id || 'student-priya';
+    const { courseId } = req.params;
+
+    const success = await courseRepo.joinCourse(courseId, studentId);
+    if (!success) {
+      res.status(400).json({ error: 'Failed to join course. Course or student not found.' });
+      return;
+    }
+
+    // Award 100 XP Points for joining
+    const dna = await dnaRepo.findByStudentId(studentId);
+    let updatedDna = null;
+    if (dna) {
+      const currentXp = (dna.xpPoints || 0) + 100;
+      const currentLevel = Math.floor(currentXp / 500) + 1;
+      updatedDna = await dnaRepo.updateByStudentId(studentId, {
+        xpPoints: currentXp,
+        level: currentLevel
+      });
+    }
+
+    res.json({ success: true, message: 'Joined course successfully. Awarded 100 XP!', dna: updatedDna });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/student/courses/joined — Fetch all joined courses for active student
+router.get('/courses/joined', async (req: Request, res: Response) => {
+  try {
+    const studentId = req.user?.id || 'student-priya';
+    const user = await userRepo.findById(studentId);
+    const enrolledIds = user?.enrolledCourses || [];
+    const allCourses = await courseRepo.findAll();
+    
+    const joined = allCourses.filter(c => {
+      const idStr = c._id?.toString() || '';
+      const hasId = enrolledIds.includes(idStr);
+      const hasStudent = c.enrolledStudents?.includes(studentId);
+      return hasId || hasStudent;
+    });
+
+    res.json({ courses: joined });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/student/courses/:courseId — Get course details
+router.get('/courses/:courseId', async (req: Request, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const course = await courseRepo.findById(courseId);
+    if (!course) {
+      res.status(404).json({ error: 'Course not found.' });
+      return;
+    }
+    res.json(course);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

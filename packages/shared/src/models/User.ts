@@ -19,6 +19,7 @@ const UserSchema: Schema = new Schema(
     twoFactorSecret: { type: String },
     lastLoginAt: { type: Date },
     lastLoginIP: { type: String },
+    enrolledCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
     accessibilitySettings: {
       dyslexiaMode: { type: Boolean, default: false },
       highContrast: { type: Boolean, default: false },

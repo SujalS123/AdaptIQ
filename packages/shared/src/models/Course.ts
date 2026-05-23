@@ -17,6 +17,7 @@ const CourseModuleSchema = new Schema({
   contentUrl: { type: String },
   durationMinutes: { type: Number, default: 30 },
   conceptsTaught: [{ type: String }],
+  notesContent: { type: String },
 });
 
 const CourseSchema: Schema = new Schema(
@@ -34,6 +35,7 @@ const CourseSchema: Schema = new Schema(
     isPublished: { type: Boolean, default: false },
     enrollmentCount: { type: Number, default: 0 },
     language: { type: String, default: 'en' },
+    enrolledStudents: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );

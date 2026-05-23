@@ -16,6 +16,8 @@ import {
   Activity,
   Building2,
   ArrowRightLeft,
+  Compass,
+  Plus
 } from 'lucide-react';
 
 interface NavItem {
@@ -26,6 +28,7 @@ interface NavItem {
 
 const studentLinks: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <Brain size={18} /> },
+  { label: 'Course Explorer', path: '/courses/explorer', icon: <Compass size={18} /> },
   { label: 'Practice & Quiz', path: '/quiz', icon: <BookOpen size={18} /> },
   { label: 'Study Plan', path: '/plan', icon: <Calendar size={18} /> },
   { label: 'Badges & XP', path: '/progress', icon: <Award size={18} /> },
@@ -34,6 +37,7 @@ const studentLinks: NavItem[] = [
 
 const teacherLinks: NavItem[] = [
   { label: 'Class Dashboard', path: '/teacher', icon: <BarChart3 size={18} /> },
+  { label: 'Create Course', path: '/teacher/courses/new', icon: <Plus size={18} /> },
   { label: 'At-Risk Alerts', path: '/teacher/alerts', icon: <AlertTriangle size={18} /> },
   { label: 'Upload Content', path: '/teacher/content', icon: <Upload size={18} /> },
   { label: 'Assignment Builder', path: '/teacher/assignments', icon: <ClipboardList size={18} /> },

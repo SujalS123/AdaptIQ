@@ -18,6 +18,7 @@ export interface IUser {
   twoFactorSecret?: string;
   lastLoginAt?: Date;
   lastLoginIP?: string;
+  enrolledCourses?: string[]; // Array of course IDs enrolled
   accessibilitySettings?: {
     dyslexiaMode?: boolean;
     highContrast?: boolean;

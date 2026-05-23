@@ -12,6 +12,7 @@ export interface ICourseModule {
   contentUrl?: string; // S3 storage link
   durationMinutes: number;
   conceptsTaught: string[];
+  notesContent?: string; // Pasted faculty notes content
 }
 
 export interface ICourse {
@@ -29,5 +30,6 @@ export interface ICourse {
   isPublished: boolean;
   enrollmentCount: number;
   language: string;
+  enrolledStudents?: string[]; // Array of student User IDs enrolled
   createdAt?: Date;
 }

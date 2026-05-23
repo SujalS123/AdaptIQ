@@ -133,7 +133,8 @@ class NovaAgentOrchestrator:
         text: str,
         current_theta: float,
         recent_errors: List[str] = None,
-        selected_language: str = None
+        selected_language: str = None,
+        course_id: str = None
     ) -> Dict[str, Any]:
         """
         Orchestrates full Socratic loop:
@@ -201,7 +202,10 @@ class NovaAgentOrchestrator:
             response_prefix = ""
 
         # 1. RAG Retrieve
-        docs = self.rag_engine.retrieve_context(text, namespace="dbms-gate", top_k=2)
+        ns = f"course-{course_id}" if course_id else "dbms-gate"
+        docs = self.rag_engine.retrieve_context(text, namespace=ns, top_k=2)
+        if course_id and not docs:
+            docs = self.rag_engine.retrieve_context(text, namespace="dbms-gate", top_k=2)
 
         # 2. Extract & Update Memory from current utterance
         new_memories = self.memory_manager.ingest_conversation(student_id, text)

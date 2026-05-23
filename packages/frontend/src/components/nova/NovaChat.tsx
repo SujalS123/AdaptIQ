@@ -132,10 +132,12 @@ export const NovaChat: React.FC<NovaChatProps> = ({ onClose }) => {
     // Send query to backend WebSocket if connected, otherwise fallback to local templates
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const preferredLanguage = localStorage.getItem('languagePreference') || 'en';
+      const activeCourseId = localStorage.getItem('activeCourseId') || null;
       socketRef.current.send(JSON.stringify({
         text,
         studentId: 'student_123',
-        selectedLanguage: preferredLanguage
+        selectedLanguage: preferredLanguage,
+        courseId: activeCourseId
       }));
     } else {
       console.warn('[NovaChat] Socket offline. Dropping to premium local simulator.');

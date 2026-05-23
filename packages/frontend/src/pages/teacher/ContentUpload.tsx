@@ -3,6 +3,9 @@ import { Card } from '../../components/ui/Card.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Sparkles, Upload, FileText, CheckCircle, Database, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import NovaSidebar from '../../components/nova/NovaSidebar';
+import { NovaBubble } from '../../components/nova/NovaBubble';
+import { AccessibilityPanel } from '../../components/accessibility/AccessibilityPanel';
 
 interface RAGStep {
   name: string;
@@ -91,9 +94,10 @@ export const ContentUpload: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+      <NovaSidebar />
       {/* Visual Workspace Container */}
-      <div style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column', gap: '28px', overflowY: 'auto', position: 'relative' }}>
         
         {/* Banner with gradient typography */}
         <div>
@@ -279,9 +283,10 @@ export const ContentUpload: React.FC = () => {
             </Card>
 
           </div>
-
         </div>
       </div>
+      <NovaBubble />
+      <AccessibilityPanel />
     </div>
   );
 };

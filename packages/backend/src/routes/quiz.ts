@@ -255,4 +255,90 @@ router.post('/diagnostic-baseline', async (req: Request, res: Response): Promise
   }
 });
 
+// GET /api/quiz/prerequisite/:courseId/:moduleId — Fetch prerequisite questions
+router.get('/prerequisite/:courseId/:moduleId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { courseId, moduleId } = req.params;
+    // Mock prerequisite questions for the module
+    const prerequisiteQuestions = [
+      { id: 'pq-1', text: 'What is the primary key in a relational database?', options: ['A unique identifier', 'A foreign key', 'A null value', 'A duplicate row'], correct: 'A unique identifier', concept: 'keys' },
+      { id: 'pq-2', text: 'Which SQL statement is used to extract data from a database?', options: ['SELECT', 'EXTRACT', 'GET', 'OPEN'], correct: 'SELECT', concept: 'sql-basics' },
+      { id: 'pq-3', text: 'What does ACID stand for?', options: ['Atomicity, Consistency, Isolation, Durability', 'Active, Concurrent, Indexed, Distributed', 'All, Columns, In, Database', 'None of the above'], correct: 'Atomicity, Consistency, Isolation, Durability', concept: 'acid' },
+      { id: 'pq-4', text: 'Which constraint ensures that a column cannot have a NULL value?', options: ['NOT NULL', 'UNIQUE', 'PRIMARY KEY', 'All of the above'], correct: 'All of the above', concept: 'constraints' },
+      { id: 'pq-5', text: 'What is a foreign key?', options: ['A key used to link two tables together', 'A key from another database', 'A unique identifier for a row', 'A temporary key'], correct: 'A key used to link two tables together', concept: 'keys' }
+    ];
+    // Don't send the correct answer to the client in a real scenario, but for hackathon mock it's okay, or we can omit it.
+    const questionsForClient = prerequisiteQuestions.map(q => ({ id: q.id, text: q.text, options: q.options }));
+    
+    res.json({ questions: questionsForClient });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/quiz/prerequisite/:courseId/:moduleId/verify — Grade prerequisite quiz
+router.post('/prerequisite/:courseId/:moduleId/verify', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { courseId, moduleId } = req.params;
+    const { studentId, answers } = req.body; // answers: { [questionId]: "Selected Option" }
+    
+    // Mock prerequisite questions and their answers
+    const prerequisiteQuestions = [
+      { id: 'pq-1', correct: 'A unique identifier', concept: 'Keys' },
+      { id: 'pq-2', correct: 'SELECT', concept: 'SQL Basics' },
+      { id: 'pq-3', correct: 'Atomicity, Consistency, Isolation, Durability', concept: 'ACID Properties' },
+      { id: 'pq-4', correct: 'All of the above', concept: 'Constraints' },
+      { id: 'pq-5', correct: 'A key used to link two tables together', concept: 'Keys' }
+    ];
+
+    let score = 0;
+    const strongPoints: string[] = [];
+    const weakPoints: string[] = [];
+
+    prerequisiteQuestions.forEach(q => {
+      if (answers[q.id] === q.correct) {
+        score += 20;
+        if (!strongPoints.includes(q.concept)) strongPoints.push(q.concept);
+      } else {
+        if (!weakPoints.includes(q.concept)) weakPoints.push(q.concept);
+      }
+    });
+
+    // Clean up overlapping points (if something is both, maybe keep it in weak or strong based on score, but for mock this is fine)
+    
+    let dna = await dnaRepo.findByStudentId(studentId);
+    if (dna) {
+      // Add module to unlockedModules for this course
+      let updatedEnrolledCourses = [...dna.enrolledCourses];
+      const courseIndex = updatedEnrolledCourses.findIndex(c => c.courseId.toString() === courseId);
+      if (courseIndex !== -1) {
+        if (!updatedEnrolledCourses[courseIndex].unlockedModules) {
+          updatedEnrolledCourses[courseIndex].unlockedModules = [];
+        }
+        if (!updatedEnrolledCourses[courseIndex].unlockedModules?.includes(moduleId)) {
+          updatedEnrolledCourses[courseIndex].unlockedModules?.push(moduleId);
+        }
+      }
+
+      const diagnosticHistory = [...(dna.diagnosticHistory || [])];
+      diagnosticHistory.push({
+        moduleId,
+        score,
+        strongPoints,
+        weakPoints,
+        timestamp: new Date()
+      });
+
+      dna = await dnaRepo.updateByStudentId(studentId, {
+        enrolledCourses: updatedEnrolledCourses,
+        diagnosticHistory
+      });
+    }
+
+    res.json({ score, strongPoints, weakPoints, unlocked: true, dna });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

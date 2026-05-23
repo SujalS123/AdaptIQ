@@ -11,6 +11,15 @@ export interface IEnrolledCourse {
   subject: string;
   gradeLevel?: string;
   pineconeNamespace: string;
+  unlockedModules?: string[]; // Array of module IDs that the student has unlocked via prerequisite test
+}
+
+export interface IDiagnosticLog {
+  moduleId: string;
+  score: number;
+  strongPoints: string[];
+  weakPoints: string[];
+  timestamp: Date;
 }
 
 export interface IConceptMastery {
@@ -33,6 +42,7 @@ export interface ILearnerDNA {
   enrolledCourses: IEnrolledCourse[];
   masteryScores: IConceptMastery[];
   weakConcepts: string[]; // Automatically derived from masteryScores < 0.5
+  diagnosticHistory?: IDiagnosticLog[]; // History of module prerequisite tests
   xpPoints: number;
   level: number;
   streakDays: number;

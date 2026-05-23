@@ -12,6 +12,7 @@ from risk.risk_service import RiskService
 from planner.planner_service import PlannerService
 from nova.agent_orchestrator import NovaAgentOrchestrator
 from dna.learning_style_detector import VARKDetector
+from video.manim_generator import ManimGeneratorService
 
 app = FastAPI(
     title="AdaptIQ AI-Engine",
@@ -33,6 +34,7 @@ risk_service = RiskService()
 planner_service = PlannerService()
 nova_orchestrator = NovaAgentOrchestrator()
 vark_detector = VARKDetector()
+manim_generator = ManimGeneratorService()
 
 # --- Pydantic Schemas ---
 
@@ -83,6 +85,25 @@ class NovaChatRequest(BaseModel):
     current_theta: float
     recent_errors: Optional[List[str]] = None
     selected_language: Optional[str] = None
+    course_id: Optional[str] = None
+
+class IndexChapterRequest(BaseModel):
+    course_id: str
+    chapter_id: str
+    notes_content: str
+
+class IndexFileRequest(BaseModel):
+    course_id: str
+    chapter_id: str
+    file_name: str
+    file_type: str
+    base64_data: str
+
+
+class VideoGenerateRequest(BaseModel):
+    concept: str
+    style: Optional[str] = "educational"
+
 
 
 # --- Endpoints ---
@@ -191,11 +212,82 @@ def get_nova_socratic_chat(payload: NovaChatRequest):
             text=payload.text,
             current_theta=payload.current_theta,
             recent_errors=payload.recent_errors,
-            selected_language=payload.selected_language
+            selected_language=payload.selected_language,
+            course_id=payload.course_id
         )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/nova/index-chapter")
+def index_chapter(payload: IndexChapterRequest):
+    """
+    Vectorizes a chapter's notes and indexes them in vector and sparse DBs under namespace course-{course_id}
+    """
+    try:
+        from rag.chunker import create_sliding_window_chunks
+        chunks = create_sliding_window_chunks(payload.notes_content)
+        rag_engine = nova_orchestrator.rag_engine
+        
+        namespace = f"course-{payload.course_id}"
+        for chunk in chunks:
+            chunk_id = f"chunk-{payload.chapter_id}-{chunk['chunk_id']}"
+            metadata = {
+                "text": chunk["text"],
+                "source": "faculty_notes",
+                "course_id": payload.course_id,
+                "chapter_id": payload.chapter_id
+            }
+            # Use unified add_document method to sync both Dense and Sparse indices
+            rag_engine.add_document(namespace, chunk_id, chunk["text"], metadata)
+            
+        return {"success": True, "message": f"Successfully indexed {len(chunks)} chunks in namespace '{namespace}'"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/nova/index-file")
+def index_file(payload: IndexFileRequest):
+    """
+    Decodes base64 file data, extracts text (PDF, DOCX, PPTX, TXT),
+    chunks it, and indexes it into Dense & Sparse databases under course-{course_id}.
+    Returns the extracted text content.
+    """
+    try:
+        import base64
+        from rag.file_processor import FileProcessor
+        from rag.chunker import create_sliding_window_chunks
+        
+        # Decode base64 file data
+        file_bytes = base64.b64decode(payload.base64_data)
+        
+        # Extract text content
+        extracted_text = FileProcessor.extract_text(file_bytes, payload.file_type)
+        if not extracted_text.strip():
+            raise ValueError(f"No readable text could be extracted from this {payload.file_type} file.")
+            
+        chunks = create_sliding_window_chunks(extracted_text)
+        rag_engine = nova_orchestrator.rag_engine
+        
+        namespace = f"course-{payload.course_id}"
+        for chunk in chunks:
+            chunk_id = f"chunk-{payload.chapter_id}-{chunk['chunk_id']}"
+            metadata = {
+                "text": chunk["text"],
+                "source": payload.file_name,
+                "course_id": payload.course_id,
+                "chapter_id": payload.chapter_id
+            }
+            # Index in both Pinecone and BM25 searcher
+            rag_engine.add_document(namespace, chunk_id, chunk["text"], metadata)
+            
+        return {
+            "success": True,
+            "message": f"Successfully indexed {len(chunks)} chunks from '{payload.file_name}' into namespace '{namespace}'",
+            "extracted_text": extracted_text
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/dna/vark")
 def detect_vark_style(payload: VARKRequest):
@@ -208,6 +300,18 @@ def detect_vark_style(payload: VARKRequest):
             interaction_signals=payload.interaction_signals
         )
         return profile
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/video/generate-video")
+def generate_video(payload: VideoGenerateRequest):
+    """
+    Triggers agentic LLM drafting, reviewing, and self-healing to compile a Manim animation.
+    """
+    try:
+        result = manim_generator.generate_video(payload.concept)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

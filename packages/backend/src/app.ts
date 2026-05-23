@@ -8,6 +8,8 @@ import novaRoutes from './routes/nova';
 import uploadRoutes from './routes/upload';
 import teacherRoutes from './routes/teacher';
 import adminRoutes from './routes/admin';
+import videoRoutes from './routes/video';
+import flashcardRoutes from './routes/flashcard';
 
 const app = express();
 
@@ -23,6 +25,8 @@ app.use('/api/nova', novaRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/video', videoRoutes);
+app.use('/api/flashcards', flashcardRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

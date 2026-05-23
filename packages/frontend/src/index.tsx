@@ -8,6 +8,7 @@ import Progress from './pages/student/Progress.tsx';
 import StudyPlan from './pages/student/StudyPlan.tsx';
 import InterviewCoach from './pages/student/InterviewCoach.tsx';
 import CourseDetail from './pages/student/CourseDetail.tsx';
+import CourseExplorer from './pages/student/CourseExplorer.tsx';
 // Auth pages
 import Login from './pages/auth/Login.tsx';
 import Register from './pages/auth/Register.tsx';
@@ -20,6 +21,7 @@ import StudentDetail from './pages/teacher/StudentDetail.tsx';
 import ContentUpload from './pages/teacher/ContentUpload.tsx';
 import AssignmentBuilder from './pages/teacher/AssignmentBuilder.tsx';
 import QuizGenerator from './pages/teacher/QuizGenerator.tsx';
+import CourseBuilder from './pages/teacher/CourseBuilder.tsx';
 // Admin pages
 import UserManagement from './pages/admin/UserManagement.tsx';
 import PlatformAnalytics from './pages/admin/PlatformAnalytics.tsx';
@@ -43,9 +45,12 @@ const App: React.FC = () => {
         <Route path="/plan" element={<StudyPlan />} />
         <Route path="/interview" element={<InterviewCoach />} />
         <Route path="/course/:courseId" element={<CourseDetail />} />
+        <Route path="/student/course/:courseId" element={<CourseDetail />} />
+        <Route path="/courses/explorer" element={<CourseExplorer />} />
         
         {/* Teacher Routes */}
         <Route path="/teacher" element={<ClassDashboard />} />
+        <Route path="/teacher/courses/new" element={<CourseBuilder />} />
         <Route path="/teacher/alerts" element={<AlertsPanel />} />
         <Route path="/teacher/student/:studentId" element={<StudentDetail />} />
         <Route path="/teacher/content" element={<ContentUpload />} />

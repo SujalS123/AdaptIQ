@@ -1,5 +1,6 @@
 import { CourseModel, ICourse } from '@adaptiq/shared';
 import mongoose from 'mongoose';
+import { UserRepo } from './UserRepo';
 
 const mockCourses: Map<string, ICourse> = new Map([
   [
@@ -52,6 +53,7 @@ const mockCourses: Map<string, ICourse> = new Map([
       isPublished: true,
       enrollmentCount: 142,
       language: 'en',
+      enrolledStudents: [],
     }
   ]
 ]);
@@ -86,4 +88,96 @@ export class CourseRepo {
     mockCourses.set(newId, newCourse);
     return newCourse;
   }
+
+  async joinCourse(courseId: string, studentId: string): Promise<boolean> {
+    const userRepo = new UserRepo();
+    const user = await userRepo.findById(studentId);
+    if (!user) return false;
+
+    if (this.isOnline() && mongoose.Types.ObjectId.isValid(courseId) && mongoose.Types.ObjectId.isValid(studentId)) {
+      const course = await CourseModel.findById(courseId);
+      if (!course) return false;
+
+      const enrolled = course.enrolledStudents || [];
+      if (!enrolled.map(id => id.toString()).includes(studentId)) {
+        await CourseModel.findByIdAndUpdate(courseId, {
+          $addToSet: { enrolledStudents: new mongoose.Types.ObjectId(studentId) },
+          $inc: { enrollmentCount: 1 }
+        });
+      }
+
+      const userEnrolled = user.enrolledCourses || [];
+      if (!userEnrolled.includes(courseId)) {
+        await userRepo.update(studentId, {
+          enrolledCourses: [...userEnrolled, courseId]
+        });
+      }
+      return true;
+    }
+
+    // Offline mock execution
+    const course = mockCourses.get(courseId);
+    if (!course) return false;
+
+    if (!course.enrolledStudents) {
+      course.enrolledStudents = [];
+    }
+    if (!course.enrolledStudents.includes(studentId)) {
+      course.enrolledStudents.push(studentId);
+      course.enrollmentCount = (course.enrollmentCount || 0) + 1;
+    }
+
+    const userEnrolled = user.enrolledCourses || [];
+    if (!userEnrolled.includes(courseId)) {
+      await userRepo.update(studentId, {
+        enrolledCourses: [...userEnrolled, courseId]
+      });
+    }
+
+    return true;
+  }
+
+  async updateModuleNotes(courseId: string, moduleId: string, notesContent: string): Promise<boolean> {
+    if (this.isOnline() && mongoose.Types.ObjectId.isValid(courseId)) {
+      const result = await CourseModel.updateOne(
+        { _id: courseId, 'modules.moduleId': moduleId },
+        { $set: { 'modules.$.notesContent': notesContent } }
+      );
+      return result.modifiedCount > 0;
+    }
+
+    // Offline mock execution
+    const course = mockCourses.get(courseId);
+    if (!course) return false;
+
+    const mod = course.modules.find(m => m.moduleId === moduleId);
+    if (!mod) return false;
+
+    mod.notesContent = notesContent;
+    return true;
+  }
+
+  async updateCourse(id: string, updateData: Partial<ICourse>): Promise<ICourse | null> {
+    if (this.isOnline() && mongoose.Types.ObjectId.isValid(id)) {
+      const updated = await CourseModel.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true }
+      ).lean();
+      return updated as any;
+    }
+
+    // Offline mock execution
+    const course = mockCourses.get(id);
+    if (!course) return null;
+
+    const updated = {
+      ...course,
+      ...updateData,
+      modules: updateData.modules ? updateData.modules : course.modules
+    };
+    mockCourses.set(id, updated);
+    return updated;
+  }
 }
+

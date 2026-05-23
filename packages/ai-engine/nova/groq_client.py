@@ -76,3 +76,49 @@ class GroqClient:
         except Exception as e:
             print(f"[WARN] Failed to query Groq API: {e}")
             return None
+
+    def generate_vision_response(self, system_prompt: str, user_query: str, base64_image: str) -> Optional[str]:
+        """
+        Sends vision chat queries to the Groq API matching OpenAI standards.
+        Uses the llama-3.2-90b-vision-preview model.
+        """
+        if not self.is_configured():
+            return None
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "model": "llama-3.2-90b-vision-preview",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": user_query},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "temperature": 0.3,
+            "max_tokens": 1024
+        }
+
+        try:
+            response = requests.post(self.url, headers=headers, json=data, timeout=15)
+            if response.status_code == 200:
+                result_json = response.json()
+                return result_json["choices"][0]["message"]["content"].strip()
+            else:
+                print(f"[WARN] Groq Vision API returned status code {response.status_code}: {response.text}")
+                return None
+        except Exception as e:
+            print(f"[WARN] Failed to query Groq Vision API: {e}")
+            return None
