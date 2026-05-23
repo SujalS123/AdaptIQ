@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { NovaSidebar } from '../../components/nova/NovaSidebar.tsx';
-import { NovaBubble } from '../../components/nova/NovaBubble.tsx';
-import { AccessibilityPanel } from '../../components/accessibility/AccessibilityPanel.tsx';
+
 import { Card } from '../../components/ui/Card.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { BookOpen, FileText, Upload, ArrowLeft, Send, Brain, GraduationCap } from 'lucide-react';
@@ -160,12 +158,7 @@ export const CourseDetail: React.FC = () => {
   const studentNotes = notes.filter(n => n.role === 'student');
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar Navigation */}
-      <NovaSidebar />
-
-      {/* Main Viewport */}
-      <div style={{ flex: 1, padding: '40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* Navigation Banner */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -453,10 +446,6 @@ export const CourseDetail: React.FC = () => {
           </Card>
 
         </div>
-      </div>
-
-      <NovaBubble />
-      <AccessibilityPanel />
     </div>
   );
 };

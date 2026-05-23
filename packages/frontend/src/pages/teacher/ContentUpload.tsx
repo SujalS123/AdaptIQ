@@ -91,9 +91,7 @@ export const ContentUpload: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Visual Workspace Container */}
-      <div style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1200px', margin: '0 auto' }}>
         
         {/* Banner with gradient typography */}
         <div>
@@ -281,7 +279,6 @@ export const ContentUpload: React.FC = () => {
           </div>
 
         </div>
-      </div>
     </div>
   );
 };

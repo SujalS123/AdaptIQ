@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.tsx';
-import { Sparkles, Brain, Award, Calendar, BookOpen, MessageSquare, LogOut } from 'lucide-react';
+import { Shield, Activity, Users, Settings, Server, LogOut } from 'lucide-react';
 
-export const NovaSidebar: React.FC = () => {
+export const AdminSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
@@ -23,49 +23,25 @@ export const NovaSidebar: React.FC = () => {
     >
       <div 
         style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer' }}
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/admin')}
       >
-        <Sparkles size={24} color="var(--color-primary)" />
-        <h2 style={{ fontSize: '20px', margin: '0px', fontWeight: 700 }} className="gradient-text">
-          AdaptIQ
+        <div style={{ backgroundColor: 'var(--color-danger)', padding: '6px', borderRadius: '8px' }}>
+          <Shield size={20} color="white" />
+        </div>
+        <h2 style={{ fontSize: '18px', margin: '0px', fontWeight: 700 }}>
+          Admin Console
         </h2>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div 
-          style={linkStyle(currentPath === '/')}
-          onClick={() => navigate('/')}
-        >
-          <Brain size={18} />
-          <span>Dashboard</span>
+        <div style={linkStyle(currentPath === '/admin')} onClick={() => navigate('/admin')}>
+          <Activity size={18} /><span>Platform Analytics</span>
         </div>
-        <div 
-          style={linkStyle(currentPath === '/quiz')}
-          onClick={() => navigate('/quiz')}
-        >
-          <BookOpen size={18} />
-          <span>Practice & Quiz</span>
+        <div style={linkStyle(currentPath === '/admin/users')} onClick={() => navigate('/admin/users')}>
+          <Users size={18} /><span>User Management</span>
         </div>
-        <div 
-          style={linkStyle(currentPath === '/plan')}
-          onClick={() => navigate('/plan')}
-        >
-          <Calendar size={18} />
-          <span>Study Plan</span>
-        </div>
-        <div 
-          style={linkStyle(currentPath === '/progress')}
-          onClick={() => navigate('/progress')}
-        >
-          <Award size={18} />
-          <span>Badges & XP</span>
-        </div>
-        <div 
-          style={linkStyle(currentPath === '/interview')}
-          onClick={() => navigate('/interview')}
-        >
-          <MessageSquare size={18} />
-          <span>Interview Coach</span>
+        <div style={linkStyle(currentPath === '/admin/institution')} onClick={() => navigate('/admin/institution')}>
+          <Settings size={18} /><span>Institution Settings</span>
         </div>
       </div>
 

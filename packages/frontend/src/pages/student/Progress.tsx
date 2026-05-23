@@ -1,5 +1,5 @@
 import React from 'react';
-import { NovaSidebar } from '../../components/nova/NovaSidebar.tsx';
+
 import { Card } from '../../components/ui/Card.tsx';
 import { Brain, Award } from 'lucide-react';
 
@@ -11,9 +11,7 @@ export const Progress: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      <NovaSidebar />
-      <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+    <>
         <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '24px' }} className="gradient-text">
           My Learner DNA Cognitive Map
         </h1>
@@ -89,8 +87,7 @@ export const Progress: React.FC = () => {
             );
           })}
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 export default Progress;

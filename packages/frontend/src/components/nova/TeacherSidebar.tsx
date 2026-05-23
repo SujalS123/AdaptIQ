@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.tsx';
-import { Sparkles, Brain, Award, Calendar, BookOpen, MessageSquare, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, AlertTriangle, PenTool, Database, LogOut } from 'lucide-react';
 
-export const NovaSidebar: React.FC = () => {
+export const TeacherSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
@@ -23,49 +23,31 @@ export const NovaSidebar: React.FC = () => {
     >
       <div 
         style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer' }}
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/teacher')}
       >
-        <Sparkles size={24} color="var(--color-primary)" />
-        <h2 style={{ fontSize: '20px', margin: '0px', fontWeight: 700 }} className="gradient-text">
-          AdaptIQ
+        <div style={{ backgroundColor: 'var(--color-primary)', padding: '6px', borderRadius: '8px' }}>
+          <LayoutDashboard size={20} color="white" />
+        </div>
+        <h2 style={{ fontSize: '18px', margin: '0px', fontWeight: 700 }}>
+          Teacher Portal
         </h2>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div 
-          style={linkStyle(currentPath === '/')}
-          onClick={() => navigate('/')}
-        >
-          <Brain size={18} />
-          <span>Dashboard</span>
+        <div style={linkStyle(currentPath === '/teacher')} onClick={() => navigate('/teacher')}>
+          <LayoutDashboard size={18} /><span>Class Dashboard</span>
         </div>
-        <div 
-          style={linkStyle(currentPath === '/quiz')}
-          onClick={() => navigate('/quiz')}
-        >
-          <BookOpen size={18} />
-          <span>Practice & Quiz</span>
+        <div style={linkStyle(currentPath === '/teacher/students')} onClick={() => navigate('/teacher/students')}>
+          <Users size={18} /><span>Student Roster</span>
         </div>
-        <div 
-          style={linkStyle(currentPath === '/plan')}
-          onClick={() => navigate('/plan')}
-        >
-          <Calendar size={18} />
-          <span>Study Plan</span>
+        <div style={linkStyle(currentPath === '/teacher/alerts')} onClick={() => navigate('/teacher/alerts')}>
+          <AlertTriangle size={18} /><span>AI Alerts</span>
         </div>
-        <div 
-          style={linkStyle(currentPath === '/progress')}
-          onClick={() => navigate('/progress')}
-        >
-          <Award size={18} />
-          <span>Badges & XP</span>
+        <div style={linkStyle(currentPath === '/teacher/assignments')} onClick={() => navigate('/teacher/assignments')}>
+          <PenTool size={18} /><span>Assignments</span>
         </div>
-        <div 
-          style={linkStyle(currentPath === '/interview')}
-          onClick={() => navigate('/interview')}
-        >
-          <MessageSquare size={18} />
-          <span>Interview Coach</span>
+        <div style={linkStyle(currentPath === '/teacher/upload')} onClick={() => navigate('/teacher/upload')}>
+          <Database size={18} /><span>RAG Content Upload</span>
         </div>
       </div>
 

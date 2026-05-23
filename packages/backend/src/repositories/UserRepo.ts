@@ -26,6 +26,18 @@ const mockUsers: Map<string, IUser> = new Map([
       isActive: true,
       languagePreference: 'en',
     }
+  ],
+  [
+    'admin-rohan',
+    {
+      _id: 'admin-rohan',
+      name: 'Rohan (Admin)',
+      email: 'admin@adaptiq.edu',
+      passwordHash: '$2a$10$C8.1zM.8t3nZ8Q8U2XU.Nu2K42oQe28Ue.r8Y3d8U2Y2M2P2Q2r2a',
+      role: 'admin',
+      isActive: true,
+      languagePreference: 'en',
+    }
   ]
 ]);
 
@@ -36,7 +48,8 @@ export class UserRepo {
 
   async findByEmail(email: string): Promise<IUser | null> {
     if (this.isOnline()) {
-      return (await UserModel.findOne({ email: email.toLowerCase() }).lean()) as any;
+      const user = await UserModel.findOne({ email: email.toLowerCase() }).lean();
+      if (user) return user as any;
     }
     // Offline mock fallback
     for (const user of mockUsers.values()) {
@@ -49,7 +62,8 @@ export class UserRepo {
 
   async findById(id: string): Promise<IUser | null> {
     if (this.isOnline() && mongoose.Types.ObjectId.isValid(id)) {
-      return (await UserModel.findById(id).lean()) as any;
+      const user = await UserModel.findById(id).lean();
+      if (user) return user as any;
     }
     return mockUsers.get(id) || null;
   }

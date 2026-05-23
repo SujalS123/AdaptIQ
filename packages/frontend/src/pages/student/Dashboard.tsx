@@ -1,7 +1,5 @@
 import React from 'react';
-import { NovaSidebar } from '../../components/nova/NovaSidebar.tsx';
-import { NovaBubble } from '../../components/nova/NovaBubble.tsx';
-import { AccessibilityPanel } from '../../components/accessibility/AccessibilityPanel.tsx';
+
 import { XPBar } from '../../components/gamification/XPBar.tsx';
 import { StreakCounter } from '../../components/gamification/StreakCounter.tsx';
 import { DailyQuest } from '../../components/gamification/DailyQuest.tsx';
@@ -15,12 +13,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Dynamic persistent sidebar navigation */}
-      <NovaSidebar />
-
-      {/* Primary viewport content */}
-      <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+    <>
         
         {/* Welcome header with dynamic gradient subtitle */}
         <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -188,12 +181,7 @@ export const Dashboard: React.FC = () => {
           {/* Daily Quests drawer panel */}
           <DailyQuest />
         </div>
-      </div>
-
-      {/* Floating interactive tools widgets */}
-      <NovaBubble />
-      <AccessibilityPanel />
-    </div>
+    </>
   );
 };
 export default Dashboard;

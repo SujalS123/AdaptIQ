@@ -35,6 +35,41 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.post('/register', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { name, email, password, role } = req.body;
+    
+    // Check if email already exists
+    const existingUser = await userRepo.findByEmail(email);
+    if (existingUser) {
+      res.status(400).json({ error: 'Email already in use' });
+      return;
+    }
+
+    // Create user
+    const newUser = await userRepo.create({
+      _id: `user-${Date.now()}`,
+      name,
+      email,
+      passwordHash: password, // Simplified for mock
+      role: role || 'student',
+      isActive: true,
+      languagePreference: 'en'
+    });
+
+    // Generate token
+    const token = jwt.sign(
+      { id: newUser._id, email: newUser.email, role: newUser.role },
+      env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.json({ token, user: newUser });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/me', async (req: Request, res: Response): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;

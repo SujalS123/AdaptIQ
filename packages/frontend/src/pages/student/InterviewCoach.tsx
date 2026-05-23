@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NovaSidebar } from '../../components/nova/NovaSidebar.tsx';
+
 import { Card } from '../../components/ui/Card.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Sparkles, Brain, Send } from 'lucide-react';
@@ -34,9 +34,7 @@ export const InterviewCoach: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      <NovaSidebar />
-      <div style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 700 }} className="gradient-text">
             AI Interview & Viva Coach
@@ -128,7 +126,6 @@ export const InterviewCoach: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 };

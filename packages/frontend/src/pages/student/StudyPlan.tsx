@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NovaSidebar } from '../../components/nova/NovaSidebar.tsx';
+
 import { Card } from '../../components/ui/Card.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { 
@@ -264,12 +264,8 @@ export const StudyPlan: React.FC = () => {
     : planItems;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar Navigation */}
-      <NovaSidebar />
-
-      {/* Main Viewport Content */}
-      <div style={{ flex: 1, padding: '40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         
         {/* Floating XP and Streak Status Indicator */}
         {toastMessage && (
@@ -931,7 +927,7 @@ export const StudyPlan: React.FC = () => {
         </div>
       )}
 
-    </div>
+    </>
   );
 };
 
