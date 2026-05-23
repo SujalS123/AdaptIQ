@@ -4,6 +4,8 @@ import tempfile
 import re
 import shutil
 import json
+import base64
+import glob
 from typing import Dict, List, Any, Tuple, Optional
 from nova.groq_client import GroqClient
 
@@ -54,126 +56,59 @@ class ManimGeneratorService:
             "message": "📦 Drafted initial Manim script. Handing over to Code Reviewer..."
         })
 
-        # 2. Review phase
-        logs.append({
-            "agent": "Code Reviewer",
-            "status": "working",
-            "message": "🔍 Auditing Manim script for potential rendering issues (LaTeX usage, layout collision, overlapping, styling)..."
-        })
-        
-        reviewer_prompt = self._get_reviewer_system_prompt()
-        review_query = f"Review this Manim code. Spot any errors or violating constraints:\n\n```python\n{code}\n```"
-        
-        review_response = self.groq_client.generate_socratic_response(reviewer_prompt, review_query)
-        if review_response and "error" in review_response.lower():
-            logs.append({
-                "agent": "Code Reviewer",
-                "status": "healing",
-                "message": f"🛠️ Reviewer feedback: {review_response[:120]}... Requesting self-healing correction..."
-            })
-            # Quick single-step healing based on review
-            raw_response = self.groq_client.generate_socratic_response(
-                writer_prompt,
-                f"Correct the following code based on reviewer notes: {review_response}\n\nOriginal Code:\n{code}"
-            )
-            if raw_response:
-                code = self._extract_code(raw_response)
-                logs.append({
-                    "agent": "Code Writer",
-                    "status": "success",
-                    "message": "✨ Self-healed code based on reviewer static analysis!"
-                })
-        else:
-            logs.append({
-                "agent": "Code Reviewer",
-                "status": "success",
-                "message": "✅ Static analysis passed with 0 errors detected."
-            })
-
-        # 3. Local rendering check & self-healing loop
+        # Execute Modal Serverless Cloud Rendering
         render_success = False
         video_url = None
-        temp_dir = None
-        attempts = 0
-        max_attempts = 3
-        traceback_error = None
-
-        # Check if manim commands are available
-        manim_available = shutil.which("manim") is not None
-        if not manim_available:
+        
+        logs.append({
+            "agent": "Render Engine",
+            "status": "working",
+            "message": "☁️ Spinning up Modal.com Serverless GPU... Offloading Manim compilation to the cloud..."
+        })
+        
+        try:
+            from video.modal_manim_renderer import render_manim_scene_cloud, app
+            
+            # This calls the remote function on Modal's servers
+            # The app must be running ephemerally to hydrate the function metadata
+            with app.run():
+                video_bytes = render_manim_scene_cloud.remote(code, "ConceptExplainer")
+            
+            if video_bytes:
+                # Save the returned bytes to the public video directory
+                public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/public/videos"))
+                os.makedirs(public_dir, exist_ok=True)
+                dest_file = os.path.join(public_dir, f"explainer_cloud_{os.getpid()}.mp4")
+                
+                with open(dest_file, "wb") as f:
+                    f.write(video_bytes)
+                    
+                video_url = f"/videos/explainer_cloud_{os.getpid()}.mp4"
+                render_success = True
+                
+                logs.append({
+                    "agent": "Render Engine",
+                    "status": "success",
+                    "message": f"🎉 Cloud Render Complete! 1080p Video streamed back to {video_url}"
+                })
+        except Exception as e:
             logs.append({
                 "agent": "Render Engine",
                 "status": "warning",
-                "message": "⚠️ Local 'manim' CLI binary not found in sandbox environment. Engaging sandbox-resilient stateful SVG/HTML5 vector animation simulation..."
+                "message": f"⚠️ Modal Cloud render failed or timed out: {str(e)[:150]}. Falling back to JSON Storyboard."
             })
-        else:
-            logs.append({
-                "agent": "Render Engine",
-                "status": "working",
-                "message": f"⚡ System has 'manim' binary. Initiating subprocess render pipeline (QL - low quality)..."
-            })
-            
-            while attempts < max_attempts and not render_success:
-                attempts += 1
-                logs.append({
-                    "agent": "Render Engine",
-                    "status": "working",
-                    "message": f"🎬 Compilation Attempt {attempts}/{max_attempts}..."
-                })
-                
-                success, output_path, err_logs = self._try_render_manim(code)
-                if success:
-                    render_success = True
-                    # Move to a public asset folder or static folder if necessary
-                    public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/public/videos"))
-                    os.makedirs(public_dir, exist_ok=True)
-                    dest_file = os.path.join(public_dir, f"explainer_{attempts}_{os.getpid()}.mp4")
-                    shutil.copy(output_path, dest_file)
-                    video_url = f"/videos/explainer_{attempts}_{os.getpid()}.mp4"
-                    
-                    logs.append({
-                        "agent": "Render Engine",
-                        "status": "success",
-                        "message": f"🎉 Rendered successfully! Video saved to {video_url}"
-                    })
-                    break
-                else:
-                    traceback_error = err_logs
-                    logs.append({
-                        "agent": "Self-Healer",
-                        "status": "healing",
-                        "message": f"🔧 Compilation failed on attempt {attempts}. Extracting traceback error details..."
-                    })
-                    # Prompt healing
-                    heal_prompt = (
-                        f"You are the Manim Self-Healer agent.\n"
-                        f"The Manim code you generated failed compilation with the following terminal stderr traceback:\n\n"
-                        f"```\n{traceback_error}\n```\n\n"
-                        f"Rewrite the code to fix the traceback. Remember to keep the class named 'ConceptExplainer' "
-                        f"and do NOT use any MathTex/Tex classes. Return only the valid Python block inside ```python."
-                    )
-                    heal_response = self.groq_client.generate_socratic_response(writer_prompt, heal_prompt)
-                    if heal_response:
-                        code = self._extract_code(heal_response)
-                        logs.append({
-                            "agent": "Code Writer",
-                            "status": "success",
-                            "message": f"✏️ Generated self-healed revision {attempts}."
-                        })
-                    else:
-                        break
 
-        # 4. Generate structured HTML5 fallback visual dataset
+        # Generate structured HTML5 fallback visual dataset as a lightweight alternative
         logs.append({
             "agent": "Orchestrator",
             "status": "working",
-            "message": "🧠 Compiling structured interactive vector animation dataset for the VARK Player..."
+            "message": "🧠 Compiling lightning-fast interactive JSON storyboard..."
         })
         fallback_data = self._generate_rich_fallback_data(concept, code)
         logs.append({
             "agent": "Orchestrator",
             "status": "success",
-            "message": "🏁 AI Manim Generation process completed successfully!"
+            "message": "🏁 AI Video Generation process completed!"
         })
 
         return {
@@ -227,10 +162,10 @@ class ManimGeneratorService:
         cleaned_lines = [line for line in lines if not line.strip().startswith("```")]
         return "\n".join(cleaned_lines).strip()
 
-    def _try_render_manim(self, code: str) -> Tuple[bool, Optional[str], Optional[str]]:
+    def _try_render_manim(self, code: str) -> Tuple[bool, Optional[str], Optional[str], Optional[str]]:
         """
         Attempts to render the Manim scene class using subprocess.
-        Returns (success, video_path, err_logs).
+        Returns (success, video_path, image_path, err_logs).
         """
         temp_file = None
         try:
@@ -241,19 +176,19 @@ class ManimGeneratorService:
             with open(temp_file, "w", encoding="utf-8") as f:
                 f.write(code)
                 
-            # Compile with manim -ql (low quality 480p 15fps, fast render, warning suppression)
-            cmd = ["manim", "-ql", "-v", "WARNING", "--media_dir", temp_dir, temp_file, "ConceptExplainer"]
+            # Compile with manim -ql and save last frame
+            cmd = ["manim", "-ql", "-v", "WARNING", "--save_last_frame", "--media_dir", temp_dir, temp_file, "ConceptExplainer"]
             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
             
             if res.returncode == 0:
-                # Find output mp4 in media_dir
-                # manim puts it inside media_dir/videos/scene_script/480p15/ConceptExplainer.mp4
                 output_mp4 = None
+                output_png = None
                 for root, dirs, files in os.walk(temp_dir):
                     for file in files:
                         if file.endswith(".mp4"):
                             output_mp4 = os.path.join(root, file)
-                            break
+                        elif file.endswith(".png"):
+                            output_png = os.path.join(root, file)
                             
                 if output_mp4 and os.path.exists(output_mp4):
                     # Copy to a persistent temp folder inside the workspace
@@ -262,12 +197,17 @@ class ManimGeneratorService:
                     persist_path = os.path.join(persist_dir, f"render_{os.getpid()}.mp4")
                     shutil.copy(output_mp4, persist_path)
                     
+                    persist_png_path = None
+                    if output_png and os.path.exists(output_png):
+                        persist_png_path = os.path.join(persist_dir, f"render_{os.getpid()}.png")
+                        shutil.copy(output_png, persist_png_path)
+                    
                     # Clean up
                     try:
                         shutil.rmtree(temp_dir)
                     except:
                         pass
-                    return True, persist_path, None
+                    return True, persist_path, persist_png_path, None
             
             # If compile failed, extract stderr or stdout
             err_msg = res.stderr if res.stderr else res.stdout
@@ -275,7 +215,7 @@ class ManimGeneratorService:
                 shutil.rmtree(temp_dir)
             except:
                 pass
-            return False, None, err_msg
+            return False, None, None, err_msg
             
         except Exception as e:
             if temp_file and os.path.exists(os.path.dirname(temp_file)):
@@ -283,7 +223,7 @@ class ManimGeneratorService:
                     shutil.rmtree(os.path.dirname(temp_file))
                 except:
                     pass
-            return False, None, str(e)
+            return False, None, None, str(e)
 
     def _generate_rich_fallback_data(self, concept: str, code: str) -> Dict[str, Any]:
         """

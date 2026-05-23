@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Mic } from 'lucide-react';
+import { Send, Sparkles, Mic, Paperclip } from 'lucide-react';
 import { Card } from '../ui/Card.tsx';
 import { Button } from '../ui/Button.tsx';
 import { NovaVoiceInput } from './NovaVoiceInput.tsx';
@@ -30,6 +30,55 @@ export const NovaChat: React.FC<NovaChatProps> = ({ onClose }) => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsTyping(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = (reader.result as string).split(',')[1];
+        const activeCourseId = localStorage.getItem('activeCourseId') || '1';
+        const activeChapterId = localStorage.getItem('activeChapterId') || '1';
+
+        const payload = {
+          course_id: activeCourseId,
+          chapter_id: activeChapterId,
+          file_name: file.name,
+          file_type: file.type || 'text/plain',
+          base64_data: base64Data
+        };
+
+        const response = await fetch('http://localhost:5000/api/ai/nova/index-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              sender: 'nova',
+              text: `I've successfully read your uploaded file (${file.name}) and synced it with your chapter memory! What would you like to know about it?`,
+              timestamp: new Date()
+            }
+          ]);
+        } else {
+          console.error('[NovaChat] Failed to upload file');
+        }
+        setIsTyping(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('[NovaChat] Error reading file:', err);
+      setIsTyping(false);
+    }
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,11 +182,13 @@ export const NovaChat: React.FC<NovaChatProps> = ({ onClose }) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const preferredLanguage = localStorage.getItem('languagePreference') || 'en';
       const activeCourseId = localStorage.getItem('activeCourseId') || null;
+      const activeChapterId = localStorage.getItem('activeChapterId') || null;
       socketRef.current.send(JSON.stringify({
         text,
         studentId: 'student_123',
         selectedLanguage: preferredLanguage,
-        courseId: activeCourseId
+        courseId: activeCourseId,
+        chapterId: activeChapterId
       }));
     } else {
       console.warn('[NovaChat] Socket offline. Dropping to premium local simulator.');
@@ -338,6 +389,28 @@ export const NovaChat: React.FC<NovaChatProps> = ({ onClose }) => {
         >
           <Mic size={18} color={showVoice ? 'var(--color-danger)' : 'var(--text-secondary)'} />
         </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            borderRadius: '50%',
+            width: '38px',
+            height: '38px',
+            padding: '0px',
+            backgroundColor: 'transparent',
+          }}
+          title="Upload notes or images to chapter memory"
+        >
+          <Paperclip size={18} color="var(--text-secondary)" />
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          accept=".pdf,.txt,.docx,.png,.jpg"
+          onChange={handleFileUpload}
+        />
 
         <input
           type="text"

@@ -62,7 +62,7 @@ class GroqClient:
                 {"role": "user", "content": user_query}
             ],
             "temperature": 0.4,
-            "max_tokens": 512
+            "max_tokens": 2048
         }
 
         try:
@@ -122,3 +122,15 @@ class GroqClient:
         except Exception as e:
             print(f"[WARN] Failed to query Groq Vision API: {e}")
             return None
+
+    def translate_to_english(self, query: str, source_lang: str) -> str:
+        """
+        Translates a non-English student query into English for vector DB and BM25 RAG matching.
+        """
+        if not self.is_configured():
+            return query
+            
+        system_prompt = f"You are an expert academic translator. Translate the following {source_lang} student query into English. Return ONLY the translated English text, nothing else. No conversational filler."
+        result = self.generate_socratic_response(system_prompt, query)
+        
+        return result if result else query

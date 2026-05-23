@@ -134,7 +134,8 @@ class NovaAgentOrchestrator:
         current_theta: float,
         recent_errors: List[str] = None,
         selected_language: str = None,
-        course_id: str = None
+        course_id: str = None,
+        chapter_id: str = None
     ) -> Dict[str, Any]:
         """
         Orchestrates full Socratic loop:
@@ -150,6 +151,9 @@ class NovaAgentOrchestrator:
 
         # --- ARIA-003: Language detection ---
         lang = self._detect_language(text, selected_language)
+
+        # Composite Memory Key
+        memory_key = f"{student_id}_{course_id}_{chapter_id}" if course_id and chapter_id else student_id
 
         # --- ARIA-005: Out-of-curriculum query detection and redirection ---
         if self._is_out_of_curriculum(text) and lang == "en":
@@ -170,7 +174,7 @@ class NovaAgentOrchestrator:
                 "response": response,
                 "prompt_compiled": f"N/A - Out of Curriculum Filtered ({lang})",
                 "new_memories_extracted": [],
-                "all_current_memories": self.memory_manager.get_memories(student_id),
+                "all_current_memories": self.memory_manager.get_memories(memory_key),
                 "out_of_syllabus": True,
                 "teacher_escalated": False,
                 "language_detected": lang
@@ -201,17 +205,30 @@ class NovaAgentOrchestrator:
         else:
             response_prefix = ""
 
-        # 1. RAG Retrieve
-        ns = f"course-{course_id}" if course_id else "dbms-gate"
-        docs = self.rag_engine.retrieve_context(text, namespace=ns, top_k=2)
+        # 1. Translation and RAG Retrieve
+        search_query = text
+        if lang != "en" and self.groq_client.is_configured():
+            search_query = self.groq_client.translate_to_english(text, lang)
+            print(f"[INFO] Translated non-English query '{text}' -> '{search_query}'")
+
+        if course_id and chapter_id:
+            ns = f"course-{course_id}-chapter-{chapter_id}"
+        elif course_id:
+            ns = f"course-{course_id}"
+        else:
+            ns = "dbms-gate"
+            
+        docs = self.rag_engine.retrieve_context(search_query, namespace=ns, top_k=2)
         if course_id and not docs:
-            docs = self.rag_engine.retrieve_context(text, namespace="dbms-gate", top_k=2)
+            docs = self.rag_engine.retrieve_context(search_query, namespace="dbms-gate", top_k=2)
 
         # 2. Extract & Update Memory from current utterance
-        new_memories = self.memory_manager.ingest_conversation(student_id, text)
+        new_memories = self.memory_manager.ingest_conversation(memory_key, text)
 
         # 3. Retrieve all active memories
-        memories = self.memory_manager.get_memories(student_id)
+        memories = self.memory_manager.get_memories(memory_key)
+
+
 
         # 4. Formulate Prompt (Passing language context)
         prompt = build_socratic_prompt(

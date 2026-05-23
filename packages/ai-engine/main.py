@@ -86,6 +86,7 @@ class NovaChatRequest(BaseModel):
     recent_errors: Optional[List[str]] = None
     selected_language: Optional[str] = None
     course_id: Optional[str] = None
+    chapter_id: Optional[str] = None
 
 class IndexChapterRequest(BaseModel):
     course_id: str
@@ -213,7 +214,8 @@ def get_nova_socratic_chat(payload: NovaChatRequest):
             current_theta=payload.current_theta,
             recent_errors=payload.recent_errors,
             selected_language=payload.selected_language,
-            course_id=payload.course_id
+            course_id=payload.course_id,
+            chapter_id=payload.chapter_id
         )
         return result
     except Exception as e:

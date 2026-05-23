@@ -92,6 +92,7 @@ export const CourseDetail: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFallbackData, setVideoFallbackData] = useState<any | null>(null);
   const [activeVideoStep, setActiveVideoStep] = useState<number>(0);
+  const [activeVideoTab, setActiveVideoTab] = useState<'storyboard' | 'script'>('storyboard');
   const [videoRenderSuccess, setVideoRenderSuccess] = useState<boolean>(false);
   const [claimedVideoXP, setClaimedVideoXP] = useState<boolean>(false);
 
@@ -117,6 +118,7 @@ export const CourseDetail: React.FC = () => {
     setVideoRenderSuccess(false);
     setIsVideoGenerating(false);
     setActiveVideoStep(0);
+    setActiveVideoTab('storyboard');
     setClaimedVideoXP(false);
     setContentViewMode('flashcards');
     setIsFlashcardFlipped(false);
@@ -785,7 +787,7 @@ export const CourseDetail: React.FC = () => {
     }
   };
 
-  const handleSendChat = () => {
+  const handleSendChat = async () => {
     if (!chatInput.trim()) return;
 
     const userMessage = { sender: 'user' as const, text: chatInput };
@@ -794,23 +796,26 @@ export const CourseDetail: React.FC = () => {
     setChatInput('');
     setIsNovaTyping(true);
 
-    setTimeout(() => {
-      let reply = '';
+    try {
+      const response = await axios.post('http://localhost:8000/nova/chat', {
+        student_id: "priya@adaptiq.edu",
+        text: currentInput,
+        current_theta: 0.5,
+        course_id: courseId,
+        chapter_id: "ch1",
+        selected_language: "en"
+      });
       
-      if (selectedNote) {
-        // Aligned grounding behavior
-        reply = `I have read through your document "${selectedNote.title}". To answer Socratic-style: you asked "${currentInput}". According to the text, we see: "${selectedNote.content.slice(0, 150)}...". How would you relate this concept to your previous GATE quiz error patterns?`;
-      } else {
-        if (currentInput.toLowerCase().includes('3nf') || currentInput.toLowerCase().includes('normal')) {
-          reply = "Third Normal Form (3NF) aims to eliminate transitive functional dependencies. If A -> B and B -> C, then A -> C is a transitive dependency. Why does having C depend transitively on the primary key A cause redundancy during database updates?";
-        } else {
-          reply = `I hear you! To connect "${currentInput}" to Professor Sharma's course: what specific slide or lecture topic does this relate to, or would you like to review the primary keys first?`;
-        }
-      }
-
-      setChatMessages(prev => [...prev, { sender: 'ai', text: reply }]);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: response.data.response }]);
+    } catch (err: any) {
+      console.error("Chat API error:", err);
+      setChatMessages(prev => [...prev, { 
+        sender: 'ai', 
+        text: "My neural core is currently offline or unreachable. Please check the backend connection!" 
+      }]);
+    } finally {
       setIsNovaTyping(false);
-    }, 1200);
+    }
   };
 
   const teacherNotes = notes.filter(n => n.role === 'teacher');
@@ -1167,7 +1172,43 @@ export const CourseDetail: React.FC = () => {
                             /* Structured Interactive Vector Fallback */
                             videoFallbackData ? (
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {/* Step description */}
+                                {/* Tabs */}
+                                <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                                  <button
+                                    onClick={() => setActiveVideoTab('storyboard')}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '4px 8px',
+                                      fontSize: '12px',
+                                      fontWeight: activeVideoTab === 'storyboard' ? 700 : 400,
+                                      color: activeVideoTab === 'storyboard' ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                      borderBottom: activeVideoTab === 'storyboard' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Interactive Storyboard
+                                  </button>
+                                  <button
+                                    onClick={() => setActiveVideoTab('script')}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      padding: '4px 8px',
+                                      fontSize: '12px',
+                                      fontWeight: activeVideoTab === 'script' ? 700 : 400,
+                                      color: activeVideoTab === 'script' ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                      borderBottom: activeVideoTab === 'script' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Manim Script
+                                  </button>
+                                </div>
+
+                                {activeVideoTab === 'storyboard' ? (
+                                  <>
+                                    {/* Step description */}
                                 <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '10px', borderRadius: '6px', borderLeft: '3px solid var(--color-primary)' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
                                     <strong style={{ fontSize: '12px', color: 'var(--color-primary)' }}>
@@ -1241,6 +1282,40 @@ export const CourseDetail: React.FC = () => {
                                     </Button>
                                   )}
                                 </div>
+                                  </>
+                                ) : (
+                                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                        Raw Manim Python Source Code. You can copy this and run it locally.
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(videoCode);
+                                          triggerToast('Copied Manim script to clipboard!');
+                                        }}
+                                        style={{ fontSize: '11px' }}
+                                      >
+                                        Copy Code
+                                      </Button>
+                                    </div>
+                                    <pre style={{
+                                      flex: 1,
+                                      margin: 0,
+                                      padding: '12px',
+                                      backgroundColor: '#0d1117',
+                                      color: '#c9d1d9',
+                                      borderRadius: '8px',
+                                      overflow: 'auto',
+                                      fontSize: '11px',
+                                      fontFamily: 'monospace'
+                                    }}>
+                                      {videoCode}
+                                    </pre>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
@@ -1309,8 +1384,21 @@ export const CourseDetail: React.FC = () => {
                           variant="primary" 
                           style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
                           onClick={() => {
-                            setIsAudioPlaying(!isAudioPlaying);
-                            triggerToast(isAudioPlaying ? '⏸️ Audio stream paused.' : '▶️ Audio stream started! Voice explanation playing.');
+                            if (!isAudioPlaying) {
+                              window.speechSynthesis.cancel();
+                              const script = "Welcome to the AdaptIQ Socratic Podcast. Today we are diving into Database Normalization. Third Normal Form, or 3 N F, aims to eliminate transitive dependencies. Imagine you have a table for employees. If an employee is in a department, and the department determines the building location, then the employee's location is a transitive dependency. Updating a department's location means we would have to update every single employee's row in that department! That is an update anomaly. 3 N F solves this by breaking them into two separate tables.";
+                              const utterance = new SpeechSynthesisUtterance(script);
+                              utterance.rate = 0.9;
+                              utterance.pitch = 1.1;
+                              utterance.onend = () => setIsAudioPlaying(false);
+                              window.speechSynthesis.speak(utterance);
+                              setIsAudioPlaying(true);
+                              triggerToast('▶️ Audio stream started! Voice explanation playing.');
+                            } else {
+                              window.speechSynthesis.cancel();
+                              setIsAudioPlaying(false);
+                              triggerToast('⏸️ Audio stream stopped.');
+                            }
                           }}
                         >
                           {isAudioPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: '2px' }} />}
